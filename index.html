@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Better Clicker Game</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f0f0f0; }
+    #clicker { font-size: 24px; cursor: pointer; padding: 10px 20px; margin: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; }
+    #clicker:active { background-color: #45a049; }
+    .stats, .upgrades, .events { margin-top: 20px; }
+    .rank, .achievements, .leaderboard { font-size: 18px; }
+    .upgrade-button { margin: 5px; padding: 8px; background-color: #2196F3; color: white; border: none; border-radius: 5px; }
+    .upgrade-button:active { background-color: #0b7dda; }
+    .event { background-color: #ff9800; padding: 5px 10px; margin-top: 10px; color: white; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Better Clicker Game</h1>
+  <div>
+    <button id="clicker">Click Me!</button>
+    <div class="stats">
+      <div id="clicks">Clicks: 0</div>
+      <div id="rank">Rank: Novice</div>
+      <div id="prestige">Prestiges: 0</div>
+    </div>
+    <div class="upgrades">
+      <button id="upgrade" class="upgrade-button">Upgrade Clicker (Cost: 10)</button>
+      <button id="autoclicker" class="upgrade-button">Buy Auto-Clicker (Cost: 50)</button>
+    </div>
+    <div class="events" id="event"></div>
+    <div class="achievements" id="achievements"></div>
+    <div class="leaderboard" id="leaderboard"></div>
+  </div>
+  <script>
+    // Load saved data from localStorage or set defaults
+    let clicks = parseInt(localStorage.getItem('clicks')) || 0;
+    let rank = localStorage.getItem('rank') || "Novice";
+    let prestigeCount = parseInt(localStorage.getItem('prestigeCount')) || 0;
+    let upgradeCost = parseInt(localStorage.getItem('upgradeCost')) || 10;
+    let upgradeMultiplier = parseInt(localStorage.getItem('upgradeMultiplier')) || 1;
+    let autoClickers = parseInt(localStorage.getItem('autoClickers')) || 0;
+    let specialEvent = null;
+    let achievements = JSON.parse(localStorage.getItem('achievements')) || [];
+    const clickerButton = document.getElementById('clicker');
+    const clicksDisplay = document.getElementById('clicks');
+    const rankDisplay = document.getElementById('rank');
+    const prestigeDisplay = document.getElementById('prestige');
+    const upgradeButton = document.getElementById('upgrade');
+    const autoClickerButton = document.getElementById('autoclicker');
+    const eventDisplay = document.getElementById('event');
+    const achievementsDisplay = document.getElementById('achievements');
+
+    clickerButton.addEventListener('click', () => {
+      clicks += upgradeMultiplier;
+      clicksDisplay.innerText = `Clicks: ${clicks}`;
+      saveGame();
+      checkAchievements();
+      updateRank();
+    });
+
+    upgradeButton.addEventListener('click', () => {
+      if (clicks >= upgradeCost) {
+        clicks -= upgradeCost;
+        upgradeMultiplier += 1;
+        upgradeCost = Math.floor(upgradeCost * 1.5);
+        clicksDisplay.innerText = `Clicks: ${clicks}`;
+        saveGame();
+        updateRank();
+      }
+    });
+
+    autoClickerButton.addEventListener('click', () => {
+      if (clicks >= 50) {
+        clicks -= 50;
+        autoClickers += 1;
+        clicksDisplay.innerText = `Clicks: ${clicks}`;
+        saveGame();
+        autoClickerRate();
+      }
+    });
+
+    function saveGame() {
+      localStorage.setItem('clicks', clicks);
+      localStorage.setItem('rank', rank);
+      localStorage.setItem('prestigeCount', prestigeCount);
+      localStorage.setItem('upgradeCost', upgradeCost);
+      localStorage.setItem('upgradeMultiplier', upgradeMultiplier);
+      localStorage.setItem('autoClickers', autoClickers);
+      localStorage.setItem('achievements', JSON.stringify(achievements));
+    }
+
+    function updateRank() {
+      if (clicks >= 10000) {
+        rank = "Legendary";
+      } else if (clicks >= 5000) {
+        rank = "Master";
+      } else if (clicks >= 1000) {
+        rank = "Expert";
+      } else if (clicks >= 500) {
+        rank = "Beginner";
+      } else {
+        rank = "Novice";
+      }
+      rankDisplay.innerText = `Rank: ${rank}`;
+      saveGame();
+    }
+
+    function prestige() {
+      if (clicks >= 5000) {
+        clicks = 0;
+        prestigeCount += 1;
+        prestigeDisplay.innerText = `Prestiges: ${prestigeCount}`;
+        upgradeMultiplier = 1;
+        upgradeCost = 10;
+        saveGame();
+      }
+    }
+
+    function autoClickerRate() {
+      setInterval(() => {
+        if (autoClickers > 0) {
+          clicks += autoClickers;
+          clicksDisplay.innerText = `Clicks: ${clicks}`;
+          saveGame();
+          checkAchievements();
+        }
+      }, 1000);
+    }
+
+    function triggerEvent() {
+      const events = ["Double Clicks!", "Upgrade Discount!", "Free Auto-Clicker!"];
+      const randomEvent = events[Math.floor(Math.random() * events.length)];
+      specialEvent = randomEvent;
+      eventDisplay.innerText = `Event: ${specialEvent}`;
+      setTimeout(() => { specialEvent = null; eventDisplay.innerText = ''; }, 10000);
+    }
+
+    function checkAchievements() {
+      if (clicks === 100 && !achievements.includes("First 100 Clicks!")) {
+        addAchievement("First 100 Clicks!");
+      }
+      if (clicks >= 1000 && !achievements.includes("1k Clicks")) {
+        addAchievement("1k Clicks!");
+      }
+    }
+
+    function addAchievement(name) {
+      if (!achievements.includes(name)) {
+        achievements.push(name);
+        achievementsDisplay.innerHTML += `<div>${name}</div>`;
+        saveGame();
+      }
+    }
+
+    // Load saved game state on startup
+    clicksDisplay.innerText = `Clicks: ${clicks}`;
+    rankDisplay.innerText = `Rank: ${rank}`;
+    prestigeDisplay.innerText = `Prestiges: ${prestigeCount}`;
+    achievements.forEach(achievement => {
+      achievementsDisplay.innerHTML += `<div>${achievement}</div>`;
+    });
+
+    // Randomly trigger special events every 30 seconds
+    setInterval(() => {
+      triggerEvent();
+    }, 30000);
+
+  </script>
+</body>
+</html>
